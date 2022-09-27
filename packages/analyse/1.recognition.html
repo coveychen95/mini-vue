@@ -1,0 +1,50 @@
+<div id="app">
+  <h3>{{title}}</h3>
+</div>
+<script src="https://unpkg.com/vue@3.2.39"></script>
+<script>
+  const { createApp, h } = Vue
+
+  /**
+   * 1. 函数式
+   *    对 ts 支持更友好。v2 new Vue 之后的 this 是不确定的，所以在 ts 支持上加了很多装饰器去实现；
+   * 函数的形式定义好输入输出，类型完全可控
+   * 
+   * 2. 标准化、简化、一致性
+   *    对于 api 的设计
+   * 
+   * 3. tree-shaking
+   *    ① 简化：api 使用非必要不传入，如 render 中， h 函数不在由 render 返回；sync 修饰符的删除
+   * 指令定义；v-model 调整
+   * 
+   * 4. 复用性 composition-api 
+   *    声明式编程
+   * 
+   * 5. 性能优化
+   *    响应式，编译期优化
+   * 
+   * 6. 扩展性
+   *    自定义渲染器
+   * 
+   */
+
+
+  const app = createApp({
+    data() {
+      return {
+        title: 'Hello Vue3'
+      }
+    },
+    setup() {
+      return {
+        title: 'Hello Vue3!!!!!!!!'
+      }
+    },
+    render() {
+      h('div', {
+
+      })
+    }
+  })
+  app.mount('#app')
+</script>
