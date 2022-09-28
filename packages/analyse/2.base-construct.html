@@ -1,0 +1,63 @@
+<div id="app">
+  <h3>{{title}}</h3>
+</div>
+<script>
+  const Vue = {
+    createApp(options) {
+      
+
+      // 返回 app 实例
+      return {
+        // ？mount 的目标是什么
+        mount(selector) {
+          // mount 将 app 实例的配置项 options 解析处理渲染到真实 dom 上
+
+          // 1. mount 根据用户传入的 选择器 获取对应的宿主元素
+          const parent = document.querySelector(selector)
+          console.log('parent: ', parent);
+
+          // 2. 拿到当前宿主元素的 innerHTML 作为 template
+          // 3. 通过编译的方式将 template 得到渲染函数
+          if (!options.render) {
+
+            options.render = this.compile(parent.innerHTML)
+          }
+
+          // 4. 通过渲染函数得到真正的渲染节点
+          const el = options.render.call(options.data())
+
+          parent.innerHTML = ''
+          //  5. 真实 dom 追加到宿主元素
+          parent.appendChild(el)
+        },
+        compile(template) {
+          console.log('this: ', this);
+          // 暂时没使用 template
+          return function render () {
+            const h3 = document.createElement('h3')
+            h3.textContent = this.title
+            
+            return h3
+          }
+        }
+      }
+    }
+  }
+</script>
+<script>
+  const { createApp } = Vue
+  
+  const app = createApp({
+    data() {
+      return {
+        title: 'Hello Vue3'
+      }
+    },
+    setup() {
+      return {
+        title: 'Hello Vue3!!!!!!!!'
+      }
+    }
+  })
+  app.mount('#app')
+</script>
