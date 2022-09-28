@@ -1,0 +1,75 @@
+<div id="app">
+  <h3>{{title}}</h3>
+</div>
+<script>
+  const Vue = {
+    createApp(options) {
+      return {
+        mount(selector) {
+          const parent = document.querySelector(selector)
+
+          if (!options.render) {
+            options.render = this.compile(parent.innerHTML)
+          }
+
+          // ？如何兼容 options api
+          if (options.setup) {
+            this.setupState = options.setup()
+          } else {
+            this.data = options.data()
+          }
+
+          // Proxy 
+          // 确定 render 
+          this.proxy = new Proxy(this, {
+            get(target, key) {
+              if (key in target.setupState) {
+                return target.setupState[key]
+              } else {
+                return target.data[key]
+              }
+            },
+            set(target, key, val) {
+              if (key in ttargethis.setupState) {
+                target.setupState[key] = val
+              } else {
+                target.data[key] = val
+              }
+            }
+          })
+
+
+          const el = options.render.call(this.proxy)
+          parent.innerHTML = ''
+          parent.appendChild(el)
+        },
+        compile(template) {
+          // 暂时没使用 template
+          return function render () {
+            const h3 = document.createElement('h3')
+            h3.textContent = this.title
+            
+            return h3
+          }
+        }
+      }
+    }
+  }
+</script>
+<script>
+  const { createApp } = Vue
+  
+  const app = createApp({
+    data() {
+      return {
+        title: 'Hello Vue3'
+      }
+    },
+    setup() {
+      return {
+        title: 'Hello Vue3!!!!!!!!'
+      }
+    }
+  })
+  app.mount('#app')
+</script>
