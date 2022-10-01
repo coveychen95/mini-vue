@@ -16,6 +16,24 @@
     })
   }
 
+
+  const effectStack = []
+
+  function effect (fn) {
+    const eff = function () {
+      try {
+        effectStack.push(eff)
+        fn()
+      } catch (err) {
+        console.error('effect error', err)
+      } finally {
+        effectStack.pop()
+      }
+      
+    }
+    return eff
+  }
+
   
   const Vue = {
     createApp(options) {
