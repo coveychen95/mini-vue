@@ -19,8 +19,7 @@
   const Vue = {
     createApp(options) {
       // 暴露给 浏览器平台
-      console.log('this: ', this);
-      const renderer = Vue.createRenderer({
+      const renderer = this.createRenderer({
         querySelector(selector) {
           return document.querySelector(selector)
         },
@@ -89,9 +88,12 @@
   };
 </script>
 <script>
-  const { createApp } = Vue;
-
-  const app = createApp({
+  // const { createApp } = Vue;
+  // ！注意，解构后会将 createApp this 指向到 window， 产生报错
+  // 1：this永远指向一个对象；
+  // 2：this的指向完全取决于函数调用的位置；
+  
+  const app = Vue.createApp({
     data() {
       return {
         title: "Hello Vue3",
