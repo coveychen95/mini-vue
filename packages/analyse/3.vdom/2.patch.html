@@ -1,0 +1,208 @@
+<div id="app">
+  <h3>{{title}}</h3>
+</div>
+<script>
+  function reactive(target) {
+    return new Proxy(target, {
+      get(target, key) {
+        track(target, key)
+        return target[key]
+      },
+      set(target, key, val) {
+        target[key] = val;
+        // 触发依赖收集
+        trigger(target, key)
+      },
+      // deleteProperty
+    })
+  }
+
+
+  const effectStack = []
+
+  function effect (fn) {
+    const eff = function () {
+      try {
+        effectStack.push(eff)
+        fn()
+      } catch (err) {
+        console.error('effect error', err)
+      } finally {
+        effectStack.pop()
+      }
+      
+    }
+    // 执行一次 触发依赖收集
+    eff()
+    return eff
+  }
+
+
+  const targetMap = {
+    // state: {
+    //   title: []
+    // }
+  }
+  function track(target, key) {
+    // 获取副作用函数
+    const effect = effectStack[effectStack.length - 1]
+    if (effect) {
+      let map = targetMap[target]
+      if (!map) {
+        map = targetMap[target] = {}
+      }
+      let deps = map[key]
+      if (!deps) {
+        deps = map[key] = []
+      }
+      // 将副作用函数放入 deps
+      if (deps.indexOf(effect) === -1) {
+        deps.push(effect)
+      }
+    }
+  }
+
+  function trigger(target, key) {
+    const map = targetMap[target]
+    if (map) {
+      const deps = map[key]
+      if (deps) {
+        deps.forEach(dep => dep())
+      }
+    }
+  }
+
+
+  function h(tag, props, children) {
+    return {
+      tag, props, children
+    }
+  }
+  
+  const Vue = {
+    createApp(options) {
+      const renderer = this.createRenderer({
+        querySelector(selector) {
+          return document.querySelector(selector)
+        },
+        insert(child, parent, anchor) {
+          parent.insertBefore(child, anchor || null)
+        },
+        createElement(tag) {
+          return document.createElement(tag)
+        }
+      })
+      return renderer.createApp(options)
+    },
+    createRenderer({
+      querySelector,
+      insert,
+      createElement
+    }) {
+      // 返回 自定义渲染器
+      return {
+        createApp(options) {
+          return {
+            mount(selector) {
+              const parent = querySelector(selector);
+              if (!options.render) {
+                options.render = this.compile(parent.innerHTML);
+              }
+              if (options.setup) {
+                this.setupState = options.setup();
+              } else {
+                this.data = options.data();
+              }
+
+              this.proxy = new Proxy(this, {
+                get(target, key) {
+                  if (key in target.setupState) {
+                    return target.setupState[key];
+                  } else {
+                    return target.data[key];
+                  }
+                },
+                set(target, key, val) {
+                  if (key in target.setupState) {
+                    target.setupState[key] = val;
+                  } else {
+                    target.data[key] = val;
+                  }
+                },
+              });
+
+              this.update = effect(() => {
+                // const el = options.render.call(this.proxy);
+                // parent.innerHTML = "";
+                // insert(el, parent)
+
+                // get vnode
+                const vnode = options.render.call(this.proxy);
+                
+
+                if (!this.isMounted) {
+                  // transform vnode -> dom
+                  const el = this.createElm(vnode)
+                  parent.innerHTML = "";
+                  insert(el, parent)
+                  this.isMounted = true
+                } else {
+                  const el = this.dispatch(this._vnode, vnode)
+                  parent.innerHTML = "";
+                  insert(el, parent)
+                }
+              })
+
+              // 初始化执行一次
+              this.update()
+            },
+            createElm(vnode) {
+              // const { tag, props, children } = vnode
+              const el = createElement(vnode.tag)
+              // todo props
+              console.log('vnode.children: ', vnode.children);
+              if (typeof vnode.children === 'string') {
+                el.textContent = vnode.children
+              } else {
+                vnode.children.forEach(child => {
+                  insert(this.createElm(child), el)
+                })
+              }
+              vnode.el = el
+              console.log('el: ', el);
+              return el
+            },
+            compile(template) {
+              // 暂时没使用 template
+              return function render() {
+
+                return h('h3', null, this.title);
+                // return h('h3', null, [
+                //   h('p', null, this.title),
+                //   h('p', null, this.title)
+                // ]);
+              };
+            },
+          };
+        },
+      };
+    },
+  };
+  
+
+
+  const app = Vue.createApp({
+    
+    setup() {
+      const state = reactive({
+        title: 'reactive, yeah!'
+      })
+
+      setTimeout(() => {
+        state.title = 'yeah! reactive so awesome!!!!!!'
+      },2000)
+      return state
+    },
+  });
+  app.mount("#app");
+</script>
