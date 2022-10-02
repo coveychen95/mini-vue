@@ -5,12 +5,13 @@
   function reactive(target) {
     return new Proxy(target, {
       get(target, key) {
+        track(target, key)
         return target[key]
       },
       set(target, key, val) {
         target[key] = val;
-        // 缺少依赖收集
-        app.update()
+        // 触发依赖收集
+        trigger(target, key)
       },
       // deleteProperty
     })
@@ -36,6 +37,40 @@
     return eff
   }
 
+
+  const targetMap = {
+    // state: {
+    //   title: []
+    // }
+  }
+  function track(target, key) {
+    // 获取副作用函数
+    const effect = effectStack[effectStack.length - 1]
+    if (effect) {
+      let map = targetMap[target]
+      if (!map) {
+        map = targetMap[target] = {}
+      }
+      let deps = map[key]
+      if (!deps) {
+        deps = map[key] = []
+      }
+      // 将副作用函数放入 deps
+      if (deps.indexOf(effect) === -1) {
+        deps.push(effect)
+      }
+    }
+  }
+
+  function trigger(target, key) {
+    const map = targetMap[target]
+    if (map) {
+      const deps = map[key]
+      if (deps) {
+        deps.forEach(dep => dep())
+      }
+    }
+  }
   
   const Vue = {
     createApp(options) {
@@ -85,11 +120,11 @@
                 },
               });
 
-              this.update = function () {
+              this.update = effect(() => {
                 const el = options.render.call(this.proxy);
                 parent.innerHTML = "";
                 insert(el, parent)
-              }
+              })
 
               // 初始化执行一次
               this.update()
