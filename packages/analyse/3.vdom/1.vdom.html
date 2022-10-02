@@ -71,6 +71,13 @@
       }
     }
   }
+
+
+  function h(tag, props, children) {
+    return {
+      tag, props, children
+    }
+  }
   
   const Vue = {
     createApp(options) {
@@ -80,13 +87,17 @@
         },
         insert(child, parent, anchor) {
           parent.insertBefore(child, anchor || null)
+        },
+        createElement(tag) {
+          return document.createElement(tag)
         }
       })
       return renderer.createApp(options)
     },
     createRenderer({
       querySelector,
-      insert
+      insert,
+      createElement
     }) {
       // 返回 自定义渲染器
       return {
@@ -121,21 +132,55 @@
               });
 
               this.update = effect(() => {
-                const el = options.render.call(this.proxy);
-                parent.innerHTML = "";
-                insert(el, parent)
+                // const el = options.render.call(this.proxy);
+                // parent.innerHTML = "";
+                // insert(el, parent)
+
+                // get vnode
+                const vnode = options.render.call(this.proxy);
+                
+
+                if (!this.isMounted) {
+                  // transform vnode -> dom
+                  const el = this.createElm(vnode)
+                  parent.innerHTML = "";
+                  insert(el, parent)
+                  this.isMounted = true
+                } else {
+                  const el = this.dispatch(this._vnode, vnode)
+                  parent.innerHTML = "";
+                  insert(el, parent)
+                }
               })
 
               // 初始化执行一次
               this.update()
             },
+            createElm(vnode) {
+              // const { tag, props, children } = vnode
+              const el = createElement(vnode.tag)
+              // todo props
+              console.log('vnode.children: ', vnode.children);
+              if (typeof vnode.children === 'string') {
+                el.textContent = vnode.children
+              } else {
+                vnode.children.forEach(child => {
+                  insert(this.createElm(child), el)
+                })
+              }
+              vnode.el = el
+              console.log('el: ', el);
+              return el
+            },
             compile(template) {
               // 暂时没使用 template
               return function render() {
-                const h3 = document.createElement("h3");
-                h3.textContent = this.title;
 
-                return h3;
+                return h('h3', null, this.title);
+                // return h('h3', null, [
+                //   h('p', null, this.title),
+                //   h('p', null, this.title)
+                // ]);
               };
             },
           };
