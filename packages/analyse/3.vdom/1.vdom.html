@@ -147,7 +147,7 @@
                   insert(el, parent)
                   this.isMounted = true
                 } else {
-                  this.dispatch(this._vnode, vnode)
+                  this.patch(this._vnode, vnode)
                 }
               })
 

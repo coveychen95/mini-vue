@@ -147,9 +147,11 @@
                   insert(el, parent)
                   this.isMounted = true
                 } else {
-                  this.dispatch(this._vnode, vnode)
+                  this.patch(this._vnode, vnode)
                 }
+                this._vnode = vnode
               })
+              
 
               // 初始化执行一次
               this.update()
@@ -169,6 +171,41 @@
               vnode.el = el
               console.log('el: ', el);
               return el
+            },
+            patch(oldVm, newVm) {
+              const el = newVm.el = oldVm.el
+              if (oldVm.tag === newVm.tag) {
+                const oldChildren = oldVm.children
+                const newChildren = newVm.children
+                if (typeof oldChildren === 'string') {
+                  if (typeof newChildren === 'string') {
+                    // update text
+                    el.textContent = newChildren
+                  } else {
+                    // string -> elements
+                    el.textContent = ''
+                    newChildren.forEach(child => {
+                      insert(this.createElm(child), el)
+                    })
+                  }
+                } else {
+                  if (typeof newChildren === 'string') {
+                    // elelment -> string
+                    el.textContent = newChildren
+                  } else {
+                    // elelment -> elements
+                    // [a, b, c]
+                    // [a, b]
+                    // ->
+                    // [b, c]
+                    // [b]
+                    // ->
+                    // [c]
+                    // []
+                  }
+
+                }
+              }
             },
             compile(template) {
               // 暂时没使用 template
