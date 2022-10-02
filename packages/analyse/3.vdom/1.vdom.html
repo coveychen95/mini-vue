@@ -147,9 +147,7 @@
                   insert(el, parent)
                   this.isMounted = true
                 } else {
-                  const el = this.dispatch(this._vnode, vnode)
-                  parent.innerHTML = "";
-                  insert(el, parent)
+                  this.dispatch(this._vnode, vnode)
                 }
               })
 
