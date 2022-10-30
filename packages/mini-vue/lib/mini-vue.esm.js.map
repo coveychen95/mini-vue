@@ -1,0 +1,1 @@
+{"version":3,"file":"mini-vue.esm.js","sources":["../src/main.ts"],"sourcesContent":["export function add() {\n  console.log('add')\n}\nconsole.log(add)"],"names":[],"mappings":"SAAgB,GAAG,GAAA;AACjB,IAAA,OAAO,CAAC,GAAG,CAAC,KAAK,CAAC,CAAA;AACpB,CAAC;AACD,OAAO,CAAC,GAAG,CAAC,GAAG,CAAC;;;;"}
