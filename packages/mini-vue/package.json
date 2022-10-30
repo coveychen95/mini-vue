@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "txt",
   "main": "lib/mini-vue.cjs.js",
-  "type": "module",
   "module": "lib/mini-vue.esm.js",
   "scripts": {
     "build": "rollup -c",
