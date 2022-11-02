@@ -19,6 +19,12 @@ function createVNode(type, props, children) {
         children: children,
         shapeFlag: getShapeFlag(type)
     };
+    if (Array.isArray(children)) {
+        vnode.shapeFlag |= ShapeFlags.ARRAY_CHILDREN;
+    }
+    else if (typeof children === 'string') {
+        vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN;
+    }
     return vnode;
 }
 function getShapeFlag(type) {
@@ -31,20 +37,47 @@ function h(type, props, children) {
     return createVNode(type, props, children);
 }
 
+function hostCreateElement(type) {
+    console.log("hostCreateElement -> type: ", type);
+    var element = document.createElement(type);
+    return element;
+}
+function hostSetElementText(el, text) {
+    console.log('hostSetElementText -> el, text: ', el, text);
+    el.innerText = text;
+}
+
 function render(vnode, container) {
     console.log('调用 patch');
     patch(null, vnode);
 }
 function patch(n1, n2, container) {
     var type = n2.type, shapeFlag = n2.shapeFlag;
+    console.log('type: ', type);
     switch (type) {
         case 'text':
             break;
         default:
             if (shapeFlag & ShapeFlags.ELEMENT) {
                 console.log('处理 element');
+                processElement(n1, n2);
             }
-            else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) ;
+            else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+                console.log('处理 component');
+            }
+    }
+}
+function processElement(n1, n2, container) {
+    if (!n1) {
+        mountElement(n2);
+    }
+}
+function mountElement(vnode, container) {
+    var ShapeFlag = vnode.ShapeFlag; vnode.props;
+    var el = (vnode.el = hostCreateElement(vnode.type));
+    if (ShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        console.log("\u5904\u7406\u6587\u672C\uFF1A" + vnode.children);
+        hostSetElementText(el, vnode.children);
     }
 }
 
