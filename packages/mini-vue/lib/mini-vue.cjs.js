@@ -37,6 +37,16 @@ function h(type, props, children) {
     return createVNode(type, props, children);
 }
 
+function createComponentInstance(vnode) {
+    var instance = {
+        type: vnode.type,
+        vnode: vnode,
+        props: {},
+        proxy: null,
+    };
+    return instance;
+}
+
 function hostCreateElement(type) {
     console.log("hostCreateElement -> type: ", type);
     var element = document.createElement(type);
@@ -53,7 +63,6 @@ function render(vnode, container) {
 }
 function patch(n1, n2, container) {
     var type = n2.type, shapeFlag = n2.shapeFlag;
-    console.log('type: ', type);
     switch (type) {
         case 'text':
             break;
@@ -64,6 +73,7 @@ function patch(n1, n2, container) {
             }
             else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
                 console.log('处理 component');
+                processComponent(n1, n2);
             }
     }
 }
@@ -79,6 +89,56 @@ function mountElement(vnode, container) {
         console.log("\u5904\u7406\u6587\u672C\uFF1A" + vnode.children);
         hostSetElementText(el, vnode.children);
     }
+}
+function processComponent(n1, n2, container) {
+    if (!n1) {
+        mountComponent(n2);
+    }
+}
+function mountComponent(initialVNode, container) {
+    var instance = (initialVNode.component = createComponentInstance(initialVNode));
+    console.log("\u521B\u5EFA\u7EC4\u4EF6\u5B9E\u4F8B\uFF1A" + instance.type.name);
+    setupComponent(instance);
+    setupRenderEffect(instance);
+}
+function setupComponent(instance) {
+    initProps();
+    initSlots();
+    setupStatefulComponent(instance);
+}
+function initProps() {
+    console.log('initProps');
+}
+function initSlots() {
+    console.log('initSlots');
+}
+function setupStatefulComponent(instance) {
+    console.log('创建 proxy');
+    var setupResult = instance.setup && instance.setup(instance.props);
+    handleSetupResult(instance, setupResult);
+}
+function handleSetupResult(instance, setupResult) {
+    if (typeof setupResult === 'function') {
+        instance.render = setupResult;
+    }
+    else if (typeof setupResult === 'object') {
+        instance.setupState = setupResult;
+    }
+    finishComponentSetup(instance);
+}
+function finishComponentSetup(instance) {
+    var Component = instance.type;
+    if (!instance.render) ;
+    instance.render = Component.render;
+}
+function setupRenderEffect(instance, container) {
+    console.log("调用 render,获取 subTree");
+    var subTree = instance.render(instance.proxy);
+    console.log("subtree:", subTree);
+    console.log(instance.type.name + ":\u89E6\u53D1 beforeMount hook");
+    console.log(instance.type.name + ":\u89E6\u53D1 onVnodeBeforeMount hook");
+    patch(null, subTree);
+    console.log(instance.type.name + ":\u89E6\u53D1 mounted hook");
 }
 
 var createApp = function (rootComponent) {

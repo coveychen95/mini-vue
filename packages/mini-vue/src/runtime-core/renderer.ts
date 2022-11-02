@@ -1,4 +1,9 @@
+import { h } from '.'
 import { ShapeFlags } from '../shared'
+import { createComponentInstance } from './component'
+import {
+  hostCreateElement, hostSetElementText
+} from './render-api'
 
 export function render(vnode, container) {
   console.log('调用 patch')
@@ -14,12 +19,14 @@ function patch(n1, n2, container) {
       // TODO:
       // ...
       break
+    // 其中还有几个类型比如： static fragment comment
     default:
       // 这里基于 shapeFlag 处理
       if (shapeFlag & ShapeFlags.ELEMENT) {
         console.log('处理 element')
         processElement(n1, n2, container);
       } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        console.log('处理 component');
         processComponent(n1, n2, container);
       }
   }
@@ -34,8 +41,149 @@ function processElement(n1, n2, container) {
   }
 }
 
-function processComponent(n1, n2, container) {}
 
 function mountElement(vnode, container) {
+  const { ShapeFlag, props } = vnode
+  // 1.先创建 element
+  // 基于可拓展的渲染 api
+  const el = (vnode.el = hostCreateElement(vnode.type))
+  // 支持单子组件和多子组件的创建
+  if (ShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+    // 举个例子
+    // render() {
+    //   return h('div', {}, 'text')
+    // }
+    // 这里的 children 就是 text ，直接渲染即可
+    console.log(`处理文本：${vnode.children}`)
+    hostSetElementText(el, vnode.children)
+  }
+
+}
+
+
+
+
+function processComponent(n1, n2, container) {
+  // 如果 n1 没有值，那就是 mount 
+  if (!n1) {
+    // 初始化 component
+    mountComponent(n2, container)
+  } else {
+    // TODO:
+    // updateComponent
+  }
+}
+
+function mountComponent(initialVNode, container) {
+  // 1. 先创建一个 component instance
+  const instance = (initialVNode.component = createComponentInstance(initialVNode))
+  console.log(`创建组件实例：${instance.type.name}`)
+  // 2. 给 instance 加工加工
+  setupComponent(instance)
+  setupRenderEffect(instance, container)
+}
+
+function setupComponent(instance) {
+  // 1. 处理 props
+  initProps()
+  // 2. 处理 slots
+  initSlots()
+
+  // 源码里面有两种类型的 component
+  // 一种是基于 options 创建的
+  // 还有一种是 function 的
+  // 这里处理的是 options 创建的
+  // 叫做 stateful 类型
+  setupStatefulComponent(instance);
+}
+function initProps() {
+  // TODO:
+  console.log('initProps')
+}
+
+function initSlots() {
+  // TODO:
+  console.log('initSlots')
+}
+
+function setupStatefulComponent(instance) {
+  // TODO:
+  // 1. 先创建代理 proxy
+  console.log('创建 proxy')
+  // 2. 调用 setup
+  // TODO:
+  // 应传入 props 和 setupContext
+  const setupResult = instance.setup && instance.setup(instance.props)
+
+  // 3. 处理 setupResults
+  handleSetupResult(instance, setupResult)
+}
+
+function handleSetupResult(instance, setupResult){
+  // setup 返回的值不一样会有不同的处理
+  // 1. 看看 setupResult 是个什么
+  if (typeof setupResult === 'function') {
+    // 如果返回的是 function 的话，那么绑定到 render 上
+    // 认为是 render 逻辑
+    // setup () {return h('div', {}, 'text')}
+    instance.render = setupResult
+  } else if (typeof setupResult === 'object') {
+    instance.setupState = setupResult
+  }
+
+  finishComponentSetup(instance)
+}
+
+function finishComponentSetup(instance) {
+  // 给 instance 设置 render
+  // 先取到用户设置的 component options
+  const Component = instance.type
+
+  if (!instance.render) {
+    // TODO:
+    // 调用 compile 模块来编译 template
+  }
+  instance.render = Component.render
+
+  // applyOptions
+}
+
+function applyOptions() {
+  // 兼容 vue2.x
+  // TODO:
+}
+
+function setupRenderEffect(instance, container) {
+  // 源码里面是直接调用了 reactivity
+  // 因为这次只做初始化逻辑
+  // 所以暂时用不到
+  // 后面这里是作为 update 的主要逻辑
+
+  // 调用 render
+  // 应该传入 ctx 也就是 proxy
+  // ctx 可以选择暴露给用户的 api
+  // 源代码里面是调用的 renderComponentRoot 函数
+  // 这里为了简化直接调用 render
+  console.log("调用 render,获取 subTree");
+  const subTree = instance.render(instance.proxy)
+  console.log(`subtree:`, subTree)
+
+  // TODO:
+  console.log(`${instance.type.name}:触发 beforeMount hook`);
+  console.log(`${instance.type.name}:触发 onVnodeBeforeMount hook`);
+
+  // 这里基于 subTree 再次调用 patch
+  // 基于 render 返回的 vnode ，再次进行渲染
+  // 这里我把这个行为隐喻成开箱
+  // 一个组件就是一个箱子
+  // 里面有可能是 element （也就是可以直接渲染的）
+  // 也有可能还是 component
+  // 这里就是递归的开箱
+  // 而 subTree 就是当前的这个箱子（组件）装的东西
+  // 箱子（组件）只是个概念，它实际是不需要渲染的
+  // 要渲染的是箱子里面的 subTree
+  patch(null, subTree, container);
+
+  console.log(`${instance.type.name}:触发 mounted hook`);
 
 }
