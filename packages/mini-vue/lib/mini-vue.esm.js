@@ -44,18 +44,29 @@ function createComponentInstance(vnode) {
 }
 
 function hostCreateElement(type) {
-    console.log("hostCreateElement -> type: ", type);
+    console.log("hostCreateElement: ", type);
     var element = document.createElement(type);
     return element;
 }
 function hostSetElementText(el, text) {
-    console.log('hostSetElementText -> el, text: ', el, text);
+    console.log('hostSetElementText: ', el, text);
     el.innerText = text;
+}
+function hostPatchProp(el, key, prevValue, nextValue) {
+    console.log("hostPatchProp \u8BBE\u7F6E\u5C5E\u6027:" + key + " \u503C:" + nextValue);
+    switch (key) {
+        case 'tId':
+            el.setAttribute(key, nextValue);
+    }
+}
+function hostInsert(el, container) {
+    console.log('hostInsert: ');
+    container.append(el);
 }
 
 function render(vnode, container) {
     console.log('调用 patch');
-    patch(null, vnode);
+    patch(null, vnode, container);
 }
 function patch(n1, n2, container) {
     var type = n2.type, shapeFlag = n2.shapeFlag;
@@ -65,37 +76,59 @@ function patch(n1, n2, container) {
         default:
             if (shapeFlag & ShapeFlags.ELEMENT) {
                 console.log('处理 element');
-                processElement(n1, n2);
+                processElement(n1, n2, container);
             }
             else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
                 console.log('处理 component');
-                processComponent(n1, n2);
+                processComponent(n1, n2, container);
             }
     }
 }
 function processElement(n1, n2, container) {
     if (!n1) {
-        mountElement(n2);
+        mountElement(n2, container);
     }
 }
 function mountElement(vnode, container) {
-    var ShapeFlag = vnode.ShapeFlag; vnode.props;
+    var shapeFlag = vnode.shapeFlag, props = vnode.props;
     var el = (vnode.el = hostCreateElement(vnode.type));
-    if (ShapeFlag & ShapeFlags.TEXT_CHILDREN) {
-        console.log("\u5904\u7406\u6587\u672C\uFF1A" + vnode.children);
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        console.log("\u5904\u7406\u6587\u672C:" + vnode.children);
         hostSetElementText(el, vnode.children);
     }
+    else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        mountChildren(vnode.children, el);
+    }
+    if (props) {
+        for (var key in props) {
+            var nextVal = props[key];
+            hostPatchProp(el, key, null, nextVal);
+        }
+    }
+    console.log("vnodeHook  -> onVnodeBeforeMount");
+    console.log("DirectiveHook  -> beforeMount");
+    console.log("transition  -> beforeEnter");
+    hostInsert(el, container);
+    console.log("vnodeHook  -> onVnodeMounted");
+    console.log("DirectiveHook  -> mounted");
+    console.log("transition  -> enter");
+}
+function mountChildren(children, container) {
+    children.forEach(function (VNodeChild) {
+        console.log('mountChildren: ', VNodeChild);
+        patch(null, VNodeChild, container);
+    });
 }
 function processComponent(n1, n2, container) {
     if (!n1) {
-        mountComponent(n2);
+        mountComponent(n2, container);
     }
 }
 function mountComponent(initialVNode, container) {
     var instance = (initialVNode.component = createComponentInstance(initialVNode));
     console.log("\u521B\u5EFA\u7EC4\u4EF6\u5B9E\u4F8B\uFF1A" + instance.type.name);
     setupComponent(instance);
-    setupRenderEffect(instance);
+    setupRenderEffect(instance, container);
 }
 function setupComponent(instance) {
     initProps();
@@ -133,7 +166,7 @@ function setupRenderEffect(instance, container) {
     console.log("subtree:", subTree);
     console.log(instance.type.name + ":\u89E6\u53D1 beforeMount hook");
     console.log(instance.type.name + ":\u89E6\u53D1 onVnodeBeforeMount hook");
-    patch(null, subTree);
+    patch(null, subTree, container);
     console.log(instance.type.name + ":\u89E6\u53D1 mounted hook");
 }
 
@@ -146,7 +179,7 @@ var createApp = function (rootComponent) {
             var vnode = createVNode(rootComponent);
             app._container = rootContainer;
             console.log('调用 render , 基于 vnode 进行开箱');
-            render(vnode);
+            render(vnode, rootContainer);
             return app;
         }
     };

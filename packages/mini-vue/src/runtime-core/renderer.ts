@@ -2,7 +2,10 @@ import { h } from '.'
 import { ShapeFlags } from '../shared'
 import { createComponentInstance } from './component'
 import {
-  hostCreateElement, hostSetElementText
+  hostCreateElement,
+  hostSetElementText,
+  hostPatchProp,
+  hostInsert,
 } from './render-api'
 
 export function render(vnode, container) {
@@ -43,23 +46,64 @@ function processElement(n1, n2, container) {
 
 
 function mountElement(vnode, container) {
-  const { ShapeFlag, props } = vnode
+  const { shapeFlag, props } = vnode
   // 1.先创建 element
   // 基于可拓展的渲染 api
   const el = (vnode.el = hostCreateElement(vnode.type))
   // 支持单子组件和多子组件的创建
-  if (ShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     // 举个例子
     // render() {
     //   return h('div', {}, 'text')
     // }
     // 这里的 children 就是 text ，直接渲染即可
-    console.log(`处理文本：${vnode.children}`)
+    console.log(`处理文本:${vnode.children}`)
     hostSetElementText(el, vnode.children)
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+    // 举个例子
+    // render() {
+    //   return h('div', {}, [h("p"),h(Hello)])
+    // }
+    // 这里 children 就是个数组了，就需要依次调用 patch 递归来处理
+    mountChildren(vnode.children, el);
   }
 
+  // 处理 props
+  if (props) {
+    for (const key in props) {
+      // TODO:
+      // 需要过滤掉 vue 自身使用的 key
+      // 比如生命周期的 key：beforeMount mounted
+      const nextVal = props[key]
+      hostPatchProp(el, key, null, nextVal);
+    }
+  }
+
+  // todo
+  // 触发 beforeMount() 钩子
+  console.log("vnodeHook  -> onVnodeBeforeMount");
+  console.log("DirectiveHook  -> beforeMount");
+  console.log("transition  -> beforeEnter");
+
+  // 插入
+  hostInsert(el, container);
+
+  // todo
+  // 触发 mounted() 钩子
+  console.log("vnodeHook  -> onVnodeMounted");
+  console.log("DirectiveHook  -> mounted");
+  console.log("transition  -> enter");
 }
 
+function mountChildren (children, container) {
+  children.forEach(VNodeChild => {
+    // TODO:
+    // 这里应该处理一下 vnodeChild
+    // 因为有可能不是 vnode 类型
+    console.log('mountChildren: ', VNodeChild)
+    patch(null, VNodeChild, container)
+  });
+}
 
 
 
