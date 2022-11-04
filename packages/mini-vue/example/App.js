@@ -15,7 +15,10 @@ export default {
       [
         h('p', {}, '你好 我是 p 标签'),
         h('button', {
-          onclick: () => count.value += 1
+          onclick: () => {
+            count.value += 1
+            console.log('count.value: ', count.value);
+          }
         }, `你点我啊 ${count.value}`),
         h(HelloWorld)
       ]
