@@ -23,6 +23,10 @@ export function hostPatchProp(el, key, prevValue, nextValue) {
   switch(key) {
     case 'tId':
       el.setAttribute(key, nextValue)
+      break;
+    case 'onclick':
+      el.addEventListener('click', nextValue)
+      break;
   }
 }
 

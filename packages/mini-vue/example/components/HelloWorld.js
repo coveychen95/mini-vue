@@ -1,5 +1,7 @@
-import { h } from '../../lib/mini-vue.esm.js'
+import { h, ref } from '../../lib/mini-vue.esm.js'
 
+const count = ref(1)
+window.count = count;
 export default {
   name: 'HelloWorld',
   setup() {},
@@ -9,7 +11,7 @@ export default {
       {
         tId: 'HelloWorld'
       },
-      'hello world by mini-v3'
+      `hello world : ${count.value}`
     )
   }
 }
