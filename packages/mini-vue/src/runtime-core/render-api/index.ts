@@ -39,8 +39,19 @@ export function hostPatchProp(el, key, prevValue, nextValue) {
   }
 }
 
-export function hostInsert(el, container) {
+export function hostInsert(child, parent, anchor = null) {
   console.log('hostInsert: ');
-  container.append(el)
+  if (anchor) {
+    parent.insertBefore(child, anchor)
+  } else {
+    parent.appendChild(child)
+  }
+}
+
+export function hostRemove(child) {
+  const parent = child.parentNode
+  if (parent) {
+    parent.removeChild(child)
+  }
 }
 
