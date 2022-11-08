@@ -19,12 +19,21 @@ export function hostPatchProp(el, key, prevValue, nextValue) {
   // 为了之后 update 做准备的值
   // nextValue 当前的值
   console.log(`hostPatchProp 设置属性:${key} 值:${nextValue}`);
+  console.log(`key: ${key} 之前的值是：${prevValue}`)
 
   switch(key) {
+    case 'id':
     case 'tId':
-      el.setAttribute(key, nextValue)
+      if (nextValue === null || nextValue === undefined) {
+        el.removeAttribute(key)
+      } else {
+        el.setAttribute(key, nextValue)
+      }
       break;
     case 'onclick':
+      // TODO:
+      // 先临时实现 click 事件
+      // 后面应该用 directive 来处理
       el.addEventListener('click', nextValue)
       break;
   }

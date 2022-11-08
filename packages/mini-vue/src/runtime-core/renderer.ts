@@ -46,12 +46,41 @@ function processElement(n1, n2, container) {
 }
 
 function updateElement(n1, n2, container) {
+  const oldProps = (n1 && n1.props) || {}
+  const newProps = n2.props || {}
   console.log('应该更新 element')
   console.log('旧的 node', n1)
   console.log('新的 node', n2)
   const el = (n2.el = n1.el)
+
+  // 对比 props
+  patchProps(el, oldProps, newProps)
+  
   // 对比 children
   patchChildren(n1, n2, el)
+}
+
+function patchProps(el, oldProps, newProps) {
+  // 对比 props 有以下几种情况
+  // 1. oldProps 有，newProps 也有但是 value 值变更了
+  for (const key in newProps) {
+    const prevProp = oldProps[key]
+    const nextProp = newProps[key]
+    if (prevProp !== nextProp) {
+      // 对比属性
+      // 需要交给 host 来更新 key
+      hostPatchProp(el, key, prevProp, nextProp)
+    }
+  }
+  // 2. oldProps 有，而 newProps 没有了
+  // 如果这个 key 在 newProps 里也存在，说明已经处理过了
+  for (const key in oldProps) {
+    const prevProp = oldProps[key]
+    const nextProp = null
+    if (!(key in newProps)) {
+      hostPatchProp(el, key, prevProp, nextProp)
+    }
+  }
 }
 
 function patchChildren(n1, n2, container) {
